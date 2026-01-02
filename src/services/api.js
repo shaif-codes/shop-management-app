@@ -1,15 +1,19 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { PROD_API_URL, DEV_ANDROID_API_URL, DEV_IOS_API_URL, NODE_ENV } from '@env';
 
-// Use 10.0.2.2 for Android emulator to access localhost
-// Use your machine's local IP for physical devices, or 10.0.2.2 for emulator
-// Machine IP: 192.168.31.208
-const API_BASE_URL = Platform.OS === 'android'
-    ? 'http://192.168.31.208:5001/api'
-    : 'http://localhost:5001/api';
+// TODO: Replace this with your Azure Backend URL after deployment
+// const PROD_API_URL = 'https://munshiapp-cefcenfdg7e3btga.centralindia-01.azurewebsites.net';
 
-// const API_BASE_URL = 'http://localhost:5001/api';
+const DEV_API_URL = Platform.OS === 'android'
+    ? DEV_ANDROID_API_URL
+    : DEV_IOS_API_URL || 'http://localhost:5001/api';
+
+// Set this to true when building the APK for release
+const IS_PRODUCTION = NODE_ENV === 'production';
+
+const API_BASE_URL = IS_PRODUCTION ? PROD_API_URL : DEV_API_URL;
 
 console.log('API Base URL:', API_BASE_URL);
 
