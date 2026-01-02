@@ -1,0 +1,65 @@
+
+> ShopManagement@0.0.1 lint
+> eslint .
+
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/components/Card.js
+  3:10  warning  'colors' is defined but never used  no-unused-vars
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/navigation/AppNavigator.js
+  31:33  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “AppNavigator” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+  40:33  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “AppNavigator” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+  50:33  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “AppNavigator” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+  60:33  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “AppNavigator” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+  69:33  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “AppNavigator” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+  78:33  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “AppNavigator” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/navigation/RootNavigator.js
+  1:28  warning  'useState' is defined but never used  no-unused-vars
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/auth/LoginScreen.js
+   4:17  warning  'clearError' is defined but never used      no-unused-vars
+  12:22  warning  'error' is assigned a value but never used  no-unused-vars
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/auth/RegisterScreen.js
+  2:10  warning  'View' is defined but never used  no-unused-vars
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/customers/AddCustomerScreen.js
+  6:19  warning  'colors' is defined but never used  no-unused-vars
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/customers/CustomerDetailScreen.js
+   2:53  warning  'FlatList' is defined but never used                                                                          no-unused-vars
+   3:10  warning  'useDispatch' is defined but never used                                                                       no-unused-vars
+  18:8   error    React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  74:52  warning  Inline style: { borderLeftWidth: 4 }                                                                          react-native/no-inline-styles
+  78:52  warning  Inline style: { borderLeftWidth: 4 }                                                                          react-native/no-inline-styles
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/customers/CustomerListScreen.js
+  17:28  warning  'error' is assigned a value but never used  no-unused-vars
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/payments/RecordPaymentScreen.js
+  20:8  error  React Hook useEffect has a missing dependency: 'loadCustomer'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/products/AddProductScreen.js
+  2:41  warning  'View' is defined but never used  no-unused-vars
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/products/LowStockAlertsScreen.js
+  65:46  warning  Inline style: { alignItems: 'flex-end' }  react-native/no-inline-styles
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/reports/SalesReportScreen.js
+  11:10  warning  'formatShortDate' is defined but never used                                                                    no-unused-vars
+  21:8   error    React Hook useEffect has a missing dependency: 'loadReport'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/sales/CreateSaleScreen.js
+   88:26  warning  Missing radix parameter                                                                                                                                                                                                                                                                                                                                                                                                        radix
+  321:45  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “CreateSaleScreen” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/sales/SaleDetailScreen.js
+   4:43  warning  'Card' is defined but never used                                                                              no-unused-vars
+  15:8   error    React Hook useEffect has a missing dependency: 'fetchSale'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/mdfaizullah/Desktop/My Projects/Shop Management/ShopManagement/src/screens/sales/SalesListScreen.js
+  97:37  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtree’s DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component “SalesListScreen” and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+
+✖ 28 problems (4 errors, 24 warnings)
+
