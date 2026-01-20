@@ -42,7 +42,10 @@ const MenuScreen = ({ navigation }) => {
         <ScreenContainer>
             <ScrollView contentContainerStyle={styles.container}>
                 <Card style={styles.headerCard}>
-                    <View style={styles.profileInfo}>
+                    <TouchableOpacity
+                        style={styles.profileInfo}
+                        onPress={() => navigation.navigate('Profile')}
+                    >
                         <View style={styles.avatarCircle}>
                             <Icon name="store" size={30} color={colors.primary} />
                         </View>
@@ -53,7 +56,8 @@ const MenuScreen = ({ navigation }) => {
                                 <Text style={styles.shopAddress}>{user.tenantId.address}</Text>
                             )}
                         </View>
-                    </View>
+                        <Icon name="chevron-right" size={24} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+                    </TouchableOpacity>
                 </Card>
 
                 <View style={styles.menuGrid}>

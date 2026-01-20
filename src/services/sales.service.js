@@ -12,4 +12,10 @@ export const salesService = {
     getById: async (id) => {
         return await api.get(`/sales/${id}`);
     },
+    delete: async (id) => {
+        return await api.delete(`/sales/${id}`);
+    },
+    update: async (id, data) => {
+        return await api.put(`/sales/${id}`, data);
+    },
 };

@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback, useLayoutEffect } from 'react';
-import { ScrollView, StyleSheet, View, Text, Alert } from 'react-native';
+import React, { useState, useCallback, useLayoutEffect } from 'react';
+import { ScrollView, StyleSheet, View, Text, Alert, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { salesService } from '../../services/sales.service';
 import { invoiceService } from '../../services/invoice.service';
 import { ScreenContainer, LoadingSpinner, Card, Button } from '../../components';
@@ -12,10 +13,6 @@ const SaleDetailScreen = ({ route, navigation }) => {
     const { user } = useSelector((state) => state.auth);
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchSale();
-    }, [fetchSale]);
 
     const fetchSale = useCallback(async () => {
         try {
@@ -29,27 +26,68 @@ const SaleDetailScreen = ({ route, navigation }) => {
         }
     }, [saleId, navigation]);
 
+    useFocusEffect(
+        useCallback(() => {
+            fetchSale();
+        }, [fetchSale])
+    );
+
+    const [menuVisible, setMenuVisible] = useState(false);
+
     const handleShare = useCallback(async () => {
+        setMenuVisible(false);
         if (!sale) return;
         await invoiceService.shareInvoice(sale, user);
     }, [sale, user]);
 
+    const handleEdit = () => {
+        setMenuVisible(false);
+        navigation.navigate('CreateSale', {
+            saleId: sale._id,
+            editMode: true,
+            initialData: sale
+        });
+    };
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={{ marginRight: 15 }}>
-                    {sale && (
-                        <Icon
-                            name="share"
-                            size={24}
-                            color={colors.primary}
-                            onPress={handleShare}
-                        />
-                    )}
-                </View>
+                <TouchableOpacity
+                    onPress={() => setMenuVisible(true)}
+                    style={{ marginRight: 15, padding: 5 }}
+                >
+                    <Icon name="more-vert" size={24} color={colors.textPrimary} />
+                </TouchableOpacity>
             ),
         });
-    }, [navigation, handleShare, sale]);
+    }, [navigation]);
+
+    const handleDelete = async () => {
+        setMenuVisible(false);
+        Alert.alert(
+            'Delete Sale',
+            'Are you sure you want to delete this sale? This will reverse stock changes and customer totals. This action cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            await salesService.delete(saleId);
+                            Alert.alert('Success', 'Sale deleted successfully');
+                            navigation.goBack();
+                        } catch (error) {
+                            Alert.alert('Error', error.message || 'Failed to delete sale');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     if (loading) return <LoadingSpinner />;
     if (!sale) return null;
@@ -152,7 +190,7 @@ const SaleDetailScreen = ({ route, navigation }) => {
             </ScrollView>
 
             <View style={styles.screenActions}>
-                {sale.pendingAmount > 0 && (
+                {sale.pendingAmount > 0 ? (
                     <Button
                         title="Record Payment"
                         onPress={() => navigation.navigate('RecordPayment', {
@@ -163,6 +201,11 @@ const SaleDetailScreen = ({ route, navigation }) => {
                         style={styles.actionBtn}
                         icon={<Icon name="payment" size={20} color="#FFF" />}
                     />
+                ) : (
+                    <View style={styles.paidBadge}>
+                        <Icon name="check-circle" size={20} color={colors.success} />
+                        <Text style={styles.paidText}>FULLY PAID</Text>
+                    </View>
                 )}
                 <Button
                     title="Print Invoice"
@@ -172,6 +215,38 @@ const SaleDetailScreen = ({ route, navigation }) => {
                     icon={<Icon name="print" size={20} color={colors.primary} />}
                 />
             </View>
+
+            {/* Action Menu Modal */}
+            <Modal
+                visible={menuVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setMenuVisible(false)}
+            >
+                <Pressable
+                    style={styles.modalOverlay}
+                    onPress={() => setMenuVisible(false)}
+                >
+                    <View style={styles.menuContainer}>
+                        <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
+                            <Icon name="edit" size={22} color={colors.primary} />
+                            <Text style={styles.menuText}>Edit Sale</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.menuItem} onPress={handleShare}>
+                            <Icon name="share" size={22} color={colors.primary} />
+                            <Text style={styles.menuText}>Share Invoice</Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.menuDivider} />
+
+                        <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
+                            <Icon name="delete-outline" size={22} color={colors.error} />
+                            <Text style={[styles.menuText, { color: colors.error }]}>Delete Sale</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Modal>
         </ScreenContainer>
     );
 };
@@ -354,9 +429,59 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
         borderTopWidth: 1,
         borderTopColor: colors.border,
+        alignItems: 'center',
     },
     actionBtn: {
         flex: 1,
+    },
+    paidBadge: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: `${colors.success}15`,
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 8,
+    },
+    paidText: {
+        ...typography.body,
+        fontWeight: 'bold',
+        color: colors.success,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+        paddingTop: 50, // Approximate header height
+        paddingRight: 10,
+    },
+    menuContainer: {
+        backgroundColor: '#FFF',
+        borderRadius: 8,
+        padding: spacing.xs,
+        width: 180,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        gap: spacing.md,
+    },
+    menuText: {
+        ...typography.body,
+        color: colors.textPrimary,
+    },
+    menuDivider: {
+        height: 1,
+        backgroundColor: colors.border,
+        marginVertical: spacing.xs,
     },
 });
 

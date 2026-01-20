@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { paymentService } from '../../services/payment.service';
 import {
     ScreenContainer,
@@ -28,9 +29,11 @@ const PaymentHistoryScreen = ({ navigation }) => {
         }
     }, []);
 
-    useEffect(() => {
-        loadPayments();
-    }, [loadPayments]);
+    useFocusEffect(
+        useCallback(() => {
+            loadPayments();
+        }, [loadPayments])
+    );
 
     const onRefresh = () => {
         setRefreshing(true);

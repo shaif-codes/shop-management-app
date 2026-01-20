@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { FlatList, View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { fetchProducts } from '../../store/slices/productSlice';
 import {
     ScreenContainer,
@@ -52,9 +53,11 @@ const ProductListScreen = ({ navigation }) => {
         await dispatch(fetchProducts());
     }, [dispatch]);
 
-    useEffect(() => {
-        loadProducts();
-    }, [loadProducts]);
+    useFocusEffect(
+        useCallback(() => {
+            loadProducts();
+        }, [loadProducts])
+    );
 
     const onRefresh = async () => {
         setRefreshing(true);

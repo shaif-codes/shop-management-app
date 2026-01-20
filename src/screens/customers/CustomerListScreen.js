@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FlatList, StyleSheet, View, Text } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import { fetchCustomers } from '../../store/slices/customerSlice';
 import {
     ScreenContainer,
@@ -17,9 +18,11 @@ const CustomerListScreen = ({ navigation }) => {
     const { list, loading, error } = useSelector((state) => state.customers);
     const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        dispatch(fetchCustomers());
-    }, [dispatch]);
+    useFocusEffect(
+        useCallback(() => {
+            dispatch(fetchCustomers());
+        }, [dispatch])
+    );
 
     const onRefresh = async () => {
         setRefreshing(true);

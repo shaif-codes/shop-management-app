@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { FlatList, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { salesService } from '../../services/sales.service';
 import { ScreenContainer, LoadingSpinner, EmptyState, Card } from '../../components';
 import { spacing, colors, typography } from '../../theme';
@@ -10,9 +11,11 @@ const SalesListScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        fetchSales();
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchSales();
+        }, [])
+    );
 
     const fetchSales = async () => {
         try {

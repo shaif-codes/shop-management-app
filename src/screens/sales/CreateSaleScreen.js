@@ -20,7 +20,6 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 const CreateSaleScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const { list: customers } = useSelector((state) => state.customers);
-    const initialCustomerId = route.params?.customerId;
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [items, setItems] = useState([]);
@@ -28,21 +27,38 @@ const CreateSaleScreen = ({ navigation, route }) => {
     const [paidAmount, setPaidAmount] = useState('0');
     const [paymentMode, setPaymentMode] = useState('CASH');
     const [loading, setLoading] = useState(false);
-
-    // For product search
+    const [expandedItemIndex, setExpandedItemIndex] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searchModalVisible, setSearchModalVisible] = useState(false);
-
-    useEffect(() => {
-        if (searchModalVisible && searchQuery.length === 0) {
-            searchProducts('');
-        }
-    }, [searchModalVisible]);
-
-    // For customer search
     const [customerSearchQuery, setCustomerSearchQuery] = useState('');
     const [customerModalVisible, setCustomerModalVisible] = useState(false);
+
+    const editMode = route.params?.editMode;
+    const saleId = route.params?.saleId;
+    const initialData = route.params?.initialData;
+    const initialCustomerIdParam = route.params?.customerId;
+
+    useEffect(() => {
+        if (editMode && initialData) {
+            setSelectedCustomer(initialData.customerId);
+            setItems(initialData.items.map(item => ({
+                productId: item.productId,
+                productName: item.productName,
+                quantity: item.quantity,
+                rate: item.rate,
+                maxStock: 9999 // In edit mode, stock levels are tricky, ideally we fetch current stock + old quantity
+            })));
+            setDiscount(initialData.discount.toString());
+            setPaidAmount(initialData.paidAmount.toString());
+            setPaymentMode(initialData.paymentMode);
+
+            navigation.setOptions({ title: 'Edit Sale' });
+        }
+    }, [editMode, initialData, navigation]);
+
+    // For customer search
+
 
     const filteredCustomers = useMemo(() => {
         if (!customerSearchQuery) return customers;
@@ -57,11 +73,17 @@ const CreateSaleScreen = ({ navigation, route }) => {
     }, [dispatch]);
 
     useEffect(() => {
-        if (initialCustomerId && customers.length > 0) {
-            const customer = customers.find(c => (c._id || c.id) === initialCustomerId);
+        if (initialCustomerIdParam && customers.length > 0 && !editMode) {
+            const customer = customers.find(c => (c._id || c.id) === initialCustomerIdParam);
             if (customer) setSelectedCustomer(customer);
         }
-    }, [initialCustomerId, customers]);
+    }, [initialCustomerIdParam, customers, editMode]);
+
+    useEffect(() => {
+        if (searchModalVisible && searchQuery.length === 0) {
+            searchProducts('');
+        }
+    }, [searchModalVisible, searchQuery]);
 
     const searchProducts = async (query) => {
         setSearchQuery(query);
@@ -99,6 +121,14 @@ const CreateSaleScreen = ({ navigation, route }) => {
     const updateItemQuantity = (index, qty) => {
         const newItems = [...items];
         const item = newItems[index];
+
+        // Allow empty string for better UX while typing
+        if (qty === '') {
+            item.quantity = '';
+            setItems(newItems);
+            return;
+        }
+
         const quantity = parseInt(qty) || 0;
 
         if (quantity > item.maxStock) {
@@ -113,10 +143,32 @@ const CreateSaleScreen = ({ navigation, route }) => {
     const removeItem = (index) => {
         const newItems = items.filter((_, i) => i !== index);
         setItems(newItems);
+        if (expandedItemIndex === index) setExpandedItemIndex(null);
+    };
+
+    const updateItemRate = (index, val) => {
+        const newItems = [...items];
+
+        if (val === '') {
+            newItems[index].rate = '';
+            setItems(newItems);
+            return;
+        }
+
+        newItems[index].rate = parseFloat(val) || 0;
+        setItems(newItems);
+    };
+
+    const toggleExpand = (index) => {
+        setExpandedItemIndex(expandedItemIndex === index ? null : index);
     };
 
     const { grossAmount, netAmount, pendingAmount } = useMemo(() => {
-        const gross = items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+        const gross = items.reduce((sum, item) => {
+            const q = parseFloat(item.quantity) || 0;
+            const r = parseFloat(item.rate) || 0;
+            return sum + (q * r);
+        }, 0);
         const disc = parseFloat(discount) || 0;
         const net = Math.max(0, gross - disc);
         const paid = parseFloat(paidAmount) || 0;
@@ -133,8 +185,14 @@ const CreateSaleScreen = ({ navigation, route }) => {
             Alert.alert('Error', 'Please add at least one item');
             return;
         }
-        if (items.some(item => item.quantity <= 0)) {
-            Alert.alert('Error', 'Quantity must be greater than 0');
+        const paid = parseFloat(paidAmount) || 0;
+        if (isNaN(paid) || paid < 0) {
+            Alert.alert('Error', 'Please enter a valid paid amount');
+            return;
+        }
+
+        if (paid > netAmount) {
+            Alert.alert('Error', 'Paid amount cannot be greater than net amount');
             return;
         }
 
@@ -154,12 +212,19 @@ const CreateSaleScreen = ({ navigation, route }) => {
                 paymentMode,
             };
 
-            await salesService.create(saleData);
-            Alert.alert('Success', 'Sale created successfully', [
-                { text: 'OK', onPress: () => navigation.popToTop() }
-            ]);
+            if (editMode) {
+                await salesService.update(saleId, saleData);
+                Alert.alert('Success', 'Sale updated successfully', [
+                    { text: 'OK', onPress: () => navigation.goBack() }
+                ]);
+            } else {
+                await salesService.create(saleData);
+                Alert.alert('Success', 'Sale created successfully', [
+                    { text: 'OK', onPress: () => navigation.popToTop() }
+                ]);
+            }
         } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to create sale');
+            Alert.alert('Error', error.message || `Failed to ${editMode ? 'update' : 'create'} sale`);
         } finally {
             setLoading(false);
         }
@@ -177,7 +242,7 @@ const CreateSaleScreen = ({ navigation, route }) => {
                                 <Text style={styles.customerName}>{selectedCustomer.name}</Text>
                                 <Text style={styles.customerPhone}>{selectedCustomer.phone}</Text>
                             </View>
-                            {!initialCustomerId && (
+                            {!initialCustomerIdParam && (
                                 <TouchableOpacity onPress={() => setSelectedCustomer(null)}>
                                     <Icon name="close" size={24} color={colors.error} />
                                 </TouchableOpacity>
@@ -207,28 +272,69 @@ const CreateSaleScreen = ({ navigation, route }) => {
                         />
                     </View>
 
-                    {items.map((item, index) => (
-                        <View key={item.productId} style={styles.itemRow}>
-                            <View style={styles.itemInfo}>
-                                <Text style={styles.itemName}>{item.productName}</Text>
-                                <Text style={styles.itemRate}>₹{item.rate} / unit</Text>
-                            </View>
-                            <View style={styles.itemActions}>
-                                <Input
-                                    value={item.quantity.toString()}
-                                    onChangeText={(val) => updateItemQuantity(index, val)}
-                                    keyboardType="numeric"
-                                    containerStyle={styles.qtyContainer}
-                                    inputContainerStyle={styles.smallInputContainer}
-                                    inputStyle={styles.qtyTextInput}
-                                />
-                                <Text style={styles.itemTotal}>₹{item.quantity * item.rate}</Text>
-                                <TouchableOpacity onPress={() => removeItem(index)}>
-                                    <Icon name="delete-outline" size={20} color={colors.error} />
+                    {items.map((item, index) => {
+                        const isExpanded = expandedItemIndex === index;
+                        return (
+                            <View key={item.productId} style={styles.itemContainer}>
+                                <TouchableOpacity
+                                    style={styles.itemHeader}
+                                    onPress={() => toggleExpand(index)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.itemInfo}>
+                                        <Text style={styles.itemName}>{item.productName}</Text>
+                                        {!isExpanded && (
+                                            <Text style={styles.itemRateText}>
+                                                Qty: {item.quantity} x ₹{item.rate}
+                                            </Text>
+                                        )}
+                                    </View>
+                                    <View style={styles.headerRight}>
+                                        <Text style={styles.itemTotal}>₹{item.quantity * item.rate}</Text>
+                                        <Icon
+                                            name={isExpanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                                            size={24}
+                                            color={colors.textSecondary}
+                                        />
+                                    </View>
                                 </TouchableOpacity>
+
+                                {isExpanded && (
+                                    <View style={styles.itemEditRow}>
+                                        <View style={styles.editInputGroup}>
+                                            <Text style={styles.inputLabel}>Rate</Text>
+                                            <Input
+                                                value={item.rate.toString()}
+                                                onChangeText={(val) => updateItemRate(index, val)}
+                                                keyboardType="numeric"
+                                                leftIcon={<Text style={styles.currencySymbol}>₹</Text>}
+                                                containerStyle={styles.editInputContainer}
+                                                inputContainerStyle={styles.smallInputContainer}
+                                                inputStyle={styles.editInput}
+                                            />
+                                        </View>
+                                        <View style={styles.editInputGroup}>
+                                            <Text style={styles.inputLabel}>Qty</Text>
+                                            <Input
+                                                value={item.quantity.toString()}
+                                                onChangeText={(val) => updateItemQuantity(index, val)}
+                                                keyboardType="numeric"
+                                                containerStyle={styles.editInputContainer}
+                                                inputContainerStyle={styles.smallInputContainer}
+                                                inputStyle={styles.editInput}
+                                            />
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.itemDeleteBtn}
+                                            onPress={() => removeItem(index)}
+                                        >
+                                            <Icon name="delete-outline" size={24} color={colors.error} />
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
                             </View>
-                        </View>
-                    ))}
+                        );
+                    })}
                     {items.length === 0 && (
                         <Text style={styles.emptyText}>No items added yet</Text>
                     )}
@@ -296,7 +402,7 @@ const CreateSaleScreen = ({ navigation, route }) => {
                 </Card>
 
                 <Button
-                    title={loading ? "Creating..." : "Complete Sale"}
+                    title={loading ? (editMode ? "Updating..." : "Creating...") : (editMode ? "Update Sale" : "Complete Sale")}
                     onPress={handleSubmit}
                     loading={loading}
                     fullWidth
@@ -477,13 +583,15 @@ const styles = StyleSheet.create({
         ...typography.body,
         color: colors.primary,
     },
-    itemRow: {
+    itemContainer: {
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        paddingVertical: spacing.sm,
+    },
+    itemHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: spacing.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
     },
     itemInfo: {
         flex: 1,
@@ -493,29 +601,58 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: colors.textPrimary,
     },
-    itemRate: {
+    itemRateText: {
         ...typography.caption,
         color: colors.textSecondary,
     },
-    itemActions: {
+    headerRight: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
     },
-    qtyContainer: {
-        width: 100,
+    itemTotal: {
+        ...typography.body,
+        fontWeight: '700',
+        color: colors.textPrimary,
+        minWidth: 80,
+        textAlign: 'right',
+    },
+    itemEditRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: spacing.sm,
+        marginTop: spacing.sm,
+        paddingBottom: spacing.xs,
+    },
+    editInputGroup: {
+        flex: 1,
+    },
+    inputLabel: {
+        ...typography.caption,
+        color: colors.textSecondary,
+        marginBottom: 4,
+    },
+    editInputContainer: {
         marginBottom: 0,
+    },
+    editInput: {
+        height: 40,
+        paddingVertical: 0,
+        fontSize: 15,
+        color: colors.textPrimary,
+    },
+    currencySymbol: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginRight: 2,
+    },
+    itemDeleteBtn: {
+        padding: spacing.xs,
+        marginBottom: 5,
     },
     smallInputContainer: {
         paddingHorizontal: spacing.sm,
         height: 40,
-    },
-    qtyTextInput: {
-        height: 40,
-        paddingVertical: 0,
-        textAlign: 'center',
-        fontSize: 16,
-        color: colors.textPrimary,
     },
     summaryInputContainer: {
         width: 120,
@@ -527,12 +664,6 @@ const styles = StyleSheet.create({
         textAlign: 'right',
         fontSize: 16,
         color: colors.textPrimary,
-    },
-    itemTotal: {
-        ...typography.body,
-        fontWeight: '700',
-        width: 80,
-        textAlign: 'right',
     },
     summaryRow: {
         flexDirection: 'row',
