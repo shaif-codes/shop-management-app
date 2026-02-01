@@ -10,7 +10,7 @@ import {
     Modal,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { ScreenContainer, Input, Button, Card } from '../../components';
+import { ScreenContainer, Input, Button, Card, ErrorMessage } from '../../components';
 import { spacing, colors, typography } from '../../theme';
 import { salesService } from '../../services/sales.service';
 import { productService } from '../../services/product.service';
@@ -33,6 +33,8 @@ const CreateSaleScreen = ({ navigation, route }) => {
     const [searchModalVisible, setSearchModalVisible] = useState(false);
     const [customerSearchQuery, setCustomerSearchQuery] = useState('');
     const [customerModalVisible, setCustomerModalVisible] = useState(false);
+    const [discountError, setDiscountError] = useState('');
+    const [paidAmountError, setPaidAmountError] = useState('');
 
     const editMode = route.params?.editMode;
     const saleId = route.params?.saleId;
@@ -173,8 +175,22 @@ const CreateSaleScreen = ({ navigation, route }) => {
         const net = Math.max(0, gross - disc);
         const paid = parseFloat(paidAmount) || 0;
         const pending = Math.max(0, net - paid);
+
+        // Update errors if needed when amounts change
+        if (disc > gross && gross > 0 && discountError !== 'Discount exceeds gross amount') {
+            setDiscountError('Discount exceeds gross amount');
+        } else if (disc <= gross && discountError !== '') {
+            setDiscountError('');
+        }
+
+        if (paid > net && paidAmountError !== 'Paid amount exceeds net amount') {
+            setPaidAmountError('Paid amount exceeds net amount');
+        } else if (paid <= net && paidAmountError !== '') {
+            setPaidAmountError('');
+        }
+
         return { grossAmount: gross, netAmount: net, pendingAmount: pending };
-    }, [items, discount, paidAmount]);
+    }, [items, discount, paidAmount, discountError, paidAmountError]);
 
     const handleSubmit = async () => {
         if (!selectedCustomer) {
@@ -193,6 +209,11 @@ const CreateSaleScreen = ({ navigation, route }) => {
 
         if (paid > netAmount) {
             Alert.alert('Error', 'Paid amount cannot be greater than net amount');
+            return;
+        }
+
+        if (paidAmountError || discountError) {
+            Alert.alert('Error', 'Please fix the errors before completing the sale');
             return;
         }
 
@@ -356,8 +377,10 @@ const CreateSaleScreen = ({ navigation, route }) => {
                             containerStyle={styles.summaryInputContainer}
                             inputContainerStyle={styles.smallInputContainer}
                             inputStyle={styles.summaryTextInput}
+                            leftIcon={<Text style={styles.currencySymbol}>₹</Text>}
                         />
                     </View>
+                    <ErrorMessage message={discountError} />
 
                     <View style={styles.divider} />
 
@@ -375,8 +398,10 @@ const CreateSaleScreen = ({ navigation, route }) => {
                             containerStyle={styles.summaryInputContainer}
                             inputContainerStyle={styles.smallInputContainer}
                             inputStyle={styles.summaryTextInput}
+                            leftIcon={<Text style={styles.currencySymbol}>₹</Text>}
                         />
                     </View>
+                    <ErrorMessage message={paidAmountError} />
 
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Payment Mode</Text>

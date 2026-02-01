@@ -16,10 +16,6 @@ const SalesReportScreen = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [groupBy, setGroupBy] = useState('daily');
 
-    useEffect(() => {
-        loadReport();
-    }, [loadReport]);
-
     const loadReport = useCallback(async () => {
         setLoading(true);
         try {
@@ -35,6 +31,10 @@ const SalesReportScreen = () => {
             setRefreshing(false);
         }
     }, [groupBy]);
+
+    useEffect(() => {
+        loadReport();
+    }, [loadReport]);
 
     const onRefresh = () => {
         setRefreshing(true);

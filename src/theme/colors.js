@@ -22,4 +22,5 @@ export const colors = {
 
     credit: '#EF4444',
     paid: '#10B981',
+    white: '#FFFFFF',
 };

@@ -9,21 +9,39 @@ import {
     DashboardCard,
     LoadingSpinner,
     Card,
+    SalesChart,
 } from '../../components';
 import { colors, spacing, typography } from '../../theme';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useEffect } from 'react';
 
 const DashboardScreen = ({ navigation }) => {
     const dispatch = useDispatch();
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [chartInterval, setChartInterval] = useState('daily');
+    const [chartData, setChartData] = useState([]);
+    const [chartLoading, setChartLoading] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
             loadDashboard();
-        }, [])
+            loadChartData(chartInterval);
+        }, [chartInterval])
     );
+
+    const loadChartData = async (interval) => {
+        setChartLoading(true);
+        try {
+            const response = await reportsService.getSalesReport({ groupBy: interval });
+            setChartData(response.data?.report || response.report || []);
+        } catch (error) {
+            console.error('Failed to load chart data:', error);
+        } finally {
+            setChartLoading(false);
+        }
+    };
 
     const loadDashboard = async () => {
         try {
@@ -40,6 +58,7 @@ const DashboardScreen = ({ navigation }) => {
     const onRefresh = () => {
         setRefreshing(true);
         loadDashboard();
+        loadChartData(chartInterval);
     };
 
 
@@ -91,6 +110,31 @@ const DashboardScreen = ({ navigation }) => {
                     />
                 </View>
 
+                <Card style={styles.chartCard}>
+                    <View style={styles.chartHeader}>
+                        <Text style={styles.sectionTitle}>Sales Overview</Text>
+                        <View style={styles.intervalButtons}>
+                            {['daily', 'monthly', 'yearly'].map((interval) => (
+                                <Button
+                                    key={interval}
+                                    title={interval.charAt(0).toUpperCase()}
+                                    variant={chartInterval === interval ? 'primary' : 'outline'}
+                                    size="small"
+                                    onPress={() => setChartInterval(interval)}
+                                    style={styles.intervalButton}
+                                />
+                            ))}
+                        </View>
+                    </View>
+                    {chartLoading ? (
+                        <View style={styles.chartLoader}>
+                            <LoadingSpinner />
+                        </View>
+                    ) : (
+                        <SalesChart data={chartData} interval={chartInterval} />
+                    )}
+                </Card>
+
                 {dashboardData?.topCreditCustomers?.length > 0 && (
                     <Card style={styles.topCustomersCard}>
                         <Text style={styles.sectionTitle}>Top Credit Customers</Text>
@@ -120,6 +164,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginTop: spacing.lg,
         marginBottom: spacing.lg,
     },
     title: {
@@ -166,6 +211,30 @@ const styles = StyleSheet.create({
         ...typography.body,
         fontWeight: 'bold',
         color: colors.error,
+    },
+    chartCard: {
+        marginBottom: spacing.lg,
+        padding: spacing.md,
+    },
+    chartHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.md,
+    },
+    intervalButtons: {
+        flexDirection: 'row',
+        gap: spacing.xs,
+    },
+    intervalButton: {
+        minWidth: 40,
+        height: 30,
+        paddingHorizontal: spacing.xs,
+    },
+    chartLoader: {
+        height: 220,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 

@@ -7,3 +7,5 @@ export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as EmptyState } from './EmptyState';
 export { default as ScreenContainer } from './ScreenContainer';
 export { default as AutocompleteInput } from './AutocompleteInput';
+export { default as ErrorMessage } from './ErrorMessage';
+export { default as SalesChart } from './SalesChart';
